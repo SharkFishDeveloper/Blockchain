@@ -3,6 +3,7 @@ import express from "express";
 import {z, ZodError} from "zod";
 import prisma from "./util/DB";
 import bip39 from 'bip39';
+import { generate} from "random-words";
 
 const signupZodObject = z.object({
     password:z.string().min(8,"Password is too small").max(20,"Password is too large")
@@ -14,8 +15,7 @@ export function initHttp(app: Express) {
 
     app.post("/signup",async(req,res)=>{
         try {
-        const mnemonic = bip39?.generateMnemonic();
-        console.log(mnemonic)
+        const mnemonic = generate(16);
         const signupParse = signupZodObject.safeParse(req.body);
         if(signupParse.error){
             return res.status(400).json({ message: signupParse.error.errors[0].message});
@@ -32,7 +32,8 @@ export function initHttp(app: Express) {
         else if(!finduser){
             await prisma.user.create({
                 data:{
-                    password:req.body.password
+                    password:req.body.password,
+                    seedPhrase:mnemonic as string[]
                 }
             })
             
